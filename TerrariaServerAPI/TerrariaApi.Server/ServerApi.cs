@@ -415,7 +415,7 @@ namespace TerrariaApi.Server
 							throw new InvalidOperationException(
 								string.Format("Could not create an instance of plugin class \"{0}\".", type.FullName), ex);
 						}
-						plugins.Add(new PluginContainer(pluginInstance,Path.GetFileName(assembly.Location)));
+						plugins.Add(new PluginContainer(pluginInstance,assembly.FullName));
 					}
 				}
 				catch (Exception ex)
