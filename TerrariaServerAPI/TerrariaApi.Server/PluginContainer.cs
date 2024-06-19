@@ -19,16 +19,22 @@ namespace TerrariaApi.Server
 			get;
 			set;
 		}
+		public string Path
+		{
+			get;
+			set;
+		}
 
-		public PluginContainer(TerrariaPlugin plugin) : this(plugin, true)
+		public PluginContainer(TerrariaPlugin plugin,string path) : this(plugin, true, path)
 		{
 		}
 
-		public PluginContainer(TerrariaPlugin plugin, bool dll)
+		public PluginContainer(TerrariaPlugin plugin, bool dll,string path)
 		{
 			this.Plugin = plugin;
 			this.Initialized = false;
 			this.Dll = dll;
+			this.Path = path;
 		}
 
 		public void Initialize()

@@ -415,7 +415,7 @@ namespace TerrariaApi.Server
 							throw new InvalidOperationException(
 								string.Format("Could not create an instance of plugin class \"{0}\".", type.FullName), ex);
 						}
-						plugins.Add(new PluginContainer(pluginInstance));
+						plugins.Add(new PluginContainer(pluginInstance,Path.GetFileName(assembly.Location)));
 					}
 				}
 				catch (Exception ex)
@@ -434,7 +434,7 @@ namespace TerrariaApi.Server
 				LogWriter.ServerWriteLine($"Plugin {current.Plugin.Name} v{current.Plugin.Version} (by {current.Plugin.Author}) 已加载.", TraceLevel.Info);
 				if (!(current.Plugin.Name == "TShock"))
 				{
-					infos.Add(new PluginInfo(current.Plugin.Name, current.Plugin.Version, current.Plugin.Author, current.Plugin.Description, Path.GetFileName(current.Plugin.GetType().Assembly.Location)));
+					infos.Add(new PluginInfo(current.Plugin.Name, current.Plugin.Version, current.Plugin.Author, current.Plugin.Description, current.Path));
 				}
 			}
 			string json = JsonConvert.SerializeObject(infos, Formatting.Indented);
