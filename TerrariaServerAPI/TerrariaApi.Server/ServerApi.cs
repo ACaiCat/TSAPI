@@ -10,6 +10,8 @@ using TerrariaApi.Reporting;
 using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices;
 using System.Collections.Immutable;
+using Newtonsoft.Json;
+using System.Text;
 
 namespace TerrariaApi.Server
 {
@@ -423,45 +425,46 @@ namespace TerrariaApi.Server
 						string.Format("Failed to load assembly \"{0}\".", fileInfo.Name), ex);
 				}
 			}
-			IOrderedEnumerable<PluginContainer> orderedPluginSelector =
-				from x in Plugins
-				orderby x.Plugin.Order, x.Plugin.Name
-				select x;
-
-			foreach (PluginContainer current in orderedPluginSelector)
+			IOrderedEnumerable<PluginContainer> orderedEnumerable = from x in Plugins
+																	orderby x.Plugin.Order, x.Plugin.Name
+																	select x;
+			List<PluginInfo> infos = new List<PluginInfo>();
+			foreach (PluginContainer current in orderedEnumerable)
 			{
-				Stopwatch initTimeWatch = pluginInitWatches[current.Plugin];
-				initTimeWatch.Start();
-
-				try
+				LogWriter.ServerWriteLine($"Plugin {current.Plugin.Name} v{current.Plugin.Version} (by {current.Plugin.Author}) 已加载.", TraceLevel.Info);
+				if (!(current.Plugin.Name == "TShock"))
 				{
-					current.Initialize();
-				}
-				catch (Exception ex)
-				{
-					// Broken plugins better stop the entire server init.
-					throw new InvalidOperationException(string.Format(
-						"Plugin \"{0}\" has thrown an exception during initialization.", current.Plugin.Name), ex);
-				}
-
-				initTimeWatch.Stop();
-				LogWriter.ServerWriteLine(string.Format(
-					"Plugin {0} v{1} (by {2}) initiated.", current.Plugin.Name, current.Plugin.Version, current.Plugin.Author),
-					TraceLevel.Info);
-			}
-
-			if (Profiler.WrappedProfiler != null)
-			{
-				foreach (var pluginWatchPair in pluginInitWatches)
-				{
-					TerrariaPlugin plugin = pluginWatchPair.Key;
-					Stopwatch initTimeWatch = pluginWatchPair.Value;
-
-					Profiler.InputPluginInitTime(plugin, initTimeWatch.Elapsed);
+					infos.Add(new PluginInfo(current.Plugin.Name, current.Plugin.Version, current.Plugin.Author, current.Plugin.Description, Path.GetFileName(current.Plugin.GetType().Assembly.Location)));
 				}
 			}
+			string json = JsonConvert.SerializeObject(infos, Formatting.Indented);
+			File.WriteAllText("Plugins.json", json, Encoding.UTF8);
+			Environment.Exit(0);
+
 		}
 
+		[Serializable]
+		private class PluginInfo
+		{
+			public string Name;
+
+			public string Version;
+
+			public string Author;
+
+			public string Description;
+
+			public string Path;
+
+			public PluginInfo(string name, Version version, string author, string description,string path)
+			{
+				Name = name;
+				Version = version.ToString();
+				Author = author;
+				Description = description;
+				Path = path;
+			}
+		}
 		internal static void UnloadPlugins()
 		{
 			var pluginUnloadWatches = new Dictionary<PluginContainer, Stopwatch>();
